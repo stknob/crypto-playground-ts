@@ -1,0 +1,15 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "ESM",
+    "compilerOptions": {
+        "lib": ["ES2022", "DOM"],
+        "module": "Node16",
+        "moduleResolution": "Node16",
+        "esModuleInterop": true,
+        "target": "ES2022"
+    },
+    "include": [
+        "*.mts",
+        "src/**/*.mts"
+    ]
+}
