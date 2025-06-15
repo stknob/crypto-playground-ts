@@ -1,11 +1,11 @@
 import { sha384 } from "@noble/hashes/sha2.js";
 
 import { createClient, createServer, createSuite, ClientOpts, ServerOpts, type ClientState, type ServerState } from './_opaque.mjs';
-import { OPRF as OprfP384Sha384 } from "../oprf/p384.mjs";
+import { OPRF as OprfP384 } from "../oprf/p384.mjs";
 export { type ClientState, type ServerState };
 
 const suite = createSuite({
-	oprf: OprfP384Sha384,
+	oprf: OprfP384,
 	hash: sha384,
 	Nh: sha384.outputLen,
 	Nseed: 48,

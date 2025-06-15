@@ -1,11 +1,11 @@
 import { sha512 } from "@noble/hashes/sha2.js";
 
 import { createClient, createServer, createSuite, ClientOpts, ServerOpts, type ClientState, type ServerState } from './_opaque.mjs';
-import { OPRF as OprfP521Sha512 } from "../oprf/p521.mjs";
+import { OPRF as OprfP521 } from "../oprf/p521.mjs";
 export { type ClientState, type ServerState };
 
 const suite = createSuite({
-	oprf: OprfP521Sha512,
+	oprf: OprfP521,
 	hash: sha512,
 	Nh: sha512.outputLen,
 	Nseed: 64,

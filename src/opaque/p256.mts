@@ -1,11 +1,11 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 
 import { createClient, createServer, createSuite, type ClientState, type ServerState, ClientOpts, ServerOpts } from './_opaque.mjs';
-import { OPRF as OprfP256Sha256 } from "../oprf/p256.mjs";
+import { OPRF as OprfP256 } from "../oprf/p256.mjs";
 export { type ClientState, type ServerState };
 
 const suite = createSuite({
-	oprf: OprfP256Sha256,
+	oprf: OprfP256,
 	hash: sha256,
 	Nh: sha256.outputLen,
 	Nseed: 32,
