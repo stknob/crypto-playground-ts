@@ -2,7 +2,5 @@
     "$schema": "https://json.schemastore.org/mocharc",
     "extension": ["js", "cjs", "mjs", "ts", "mts"],
     "spec": "./test/**/*.test.{js,cjs,mjs,mts}",
-    "node-option": [
-        "loader=ts-node/esm"
-    ]
+    "node-option": ["import=tsx"]
 }
