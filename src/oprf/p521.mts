@@ -1,7 +1,6 @@
 import { p521, p521_hasher } from "@noble/curves/nist.js";
 import * as mod from "@noble/curves/abstract/modular.js";
 import { numberToBytesBE } from "@noble/curves/utils.js";
-import { hash_to_field } from "@noble/curves/abstract/hash-to-curve.js";
 import { sha512 } from '@noble/hashes/sha2.js';
 
 import { createOPRF, createPOPRF, createVOPRF, InvalidInputError, InverseError, Suite, type Keypair } from "./_oprf.mjs";
@@ -37,12 +36,10 @@ const secp521r1Suite: Suite<secp521r1Point> = Object.freeze({
 		return p521.Point.Fn.fromBytes(bytes);
 	},
 	hashToScalar(msg: Uint8Array, dst: Uint8Array): bigint {
-		const res = hash_to_field(msg, 1, { DST: dst, hash: this.hash, p: this.curve.n, expand: "xmd", m: 1, k: 256 });
-		return res[0][0];
+		return p521_hasher.hashToScalar(msg, { DST: dst });
 	},
 	hashToGroup(msg: Uint8Array, dst: Uint8Array): secp521r1Point {
-		const affinePoint = p521_hasher.hashToCurve(msg, { DST: dst }).toAffine();
-		return p521.Point.fromAffine(affinePoint);
+		return p521_hasher.hashToCurve(msg, { DST: dst }) as secp521r1Point;
 	},
 });
 

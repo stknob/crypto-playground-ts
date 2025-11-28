@@ -1,7 +1,6 @@
 import { p384, p384_hasher } from "@noble/curves/nist.js";
 import * as mod from "@noble/curves/abstract/modular.js";
 import { numberToBytesBE } from "@noble/curves/utils.js";
-import { hash_to_field } from "@noble/curves/abstract/hash-to-curve.js";
 import { sha384 } from '@noble/hashes/sha2.js';
 
 import { createOPRF, createPOPRF, createVOPRF, InvalidInputError, InverseError, Suite, type Keypair } from "./_oprf.mjs";
@@ -37,12 +36,10 @@ const secp384r1Suite: Suite<secp384r1Point> = Object.freeze({
 		return p384.Point.Fn.fromBytes(bytes);
 	},
 	hashToScalar(msg: Uint8Array, dst: Uint8Array): bigint {
-		const res = hash_to_field(msg, 1, { DST: dst, hash: this.hash, p: this.curve.n, expand: "xmd", m: 1, k: 192 });
-		return res[0][0];
+		return p384_hasher.hashToScalar(msg, { DST: dst });
 	},
 	hashToGroup(msg: Uint8Array, dst: Uint8Array): secp384r1Point {
-		const affinePoint = p384_hasher.hashToCurve(msg, { DST: dst }).toAffine();
-		return p384.Point.fromAffine(affinePoint);
+		return p384_hasher.hashToCurve(msg, { DST: dst }) as secp384r1Point;
 	},
 });
 

@@ -2,7 +2,7 @@ import * as mod from "@noble/curves/abstract/modular.js";
 import { BasicCurve, Group, GroupConstructor } from "@noble/curves/abstract/curve.js";
 
 import { CHash, concatBytes, utf8ToBytes } from "@noble/hashes/utils.js";
-import { abytes } from "@noble/curves/abstract/utils.js";
+import { abytes } from "@noble/curves/utils.js";
 
 import { I2OSP, splitBytesShared } from "./_utils.mjs";
 
