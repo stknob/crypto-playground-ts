@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha';
 
-import { hexToBytes } from "@noble/curves/abstract/utils";
+import { hexToBytes } from "@noble/curves/utils.js";
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/ristretto255.mjs";
-import { runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
+import { BatchPoprfTestVector, BatchVoprfTestVector, MixedPoprfTestVector, MixedVoprfTestVector, OprfTestVector, runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
 
-const oprfTests = [{
+const oprfTests: OprfTestVector[] = [{
 	name: "ristretto255-SHA512 - OPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -26,7 +26,7 @@ const oprfTests = [{
 	output:  hexToBytes("f4a74c9c592497375e796aa837e907b1a045d34306a749db9f34221f7e750cb4f2a6413a6bf6fa5e19ba6348eb673934a722a7ede2e7621306d18951e7cf2c73"),
 }];
 
-const voprfTests = [{
+const voprfTests: MixedVoprfTestVector[] = [{
 	name: "ristretto255-SHA512 - VOPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -80,9 +80,9 @@ const voprfTests = [{
 		hexToBytes("b58cfbe118e0cb94d79b5fd6a6dafb98764dff49c14e1770b566e42402da1a7da4d8527693914139caee5bd03903af43a491351d23b430948dd50cde10d32b3c"),
 		hexToBytes("8a9a2f3c7f085b65933594309041fc1898d42d0858e59f90814ae90571a6df60356f4610bf816f27afdd84f47719e480906d27ecd994985890e5f539e7ea74b6"),
 	],
-}];
+} as BatchVoprfTestVector];
 
-const poprfTests = [{
+const poprfTests: MixedPoprfTestVector[] = [{
 	name: "ristretto255-SHA512 - POPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -139,7 +139,7 @@ const poprfTests = [{
 		hexToBytes("ca688351e88afb1d841fde4401c79efebb2eb75e7998fa9737bd5a82a152406d38bd29f680504e54fd4587eddcf2f37a2617ac2fbd2993f7bdf45442ace7d221"),
 		hexToBytes("7c6557b276a137922a0bcfc2aa2b35dd78322bd500235eb6d6b6f91bc5b56a52de2d65612d503236b321f5d0bebcbc52b64b92e426f29c9b8b69f52de98ae507"),
 	],
-}];
+} as BatchPoprfTestVector];
 
 describe("Ristretto255-SHA512", () => {
 	it('OPRF RFC9497 test vectors',  () => runOPRFTests(OPRF, oprfTests));

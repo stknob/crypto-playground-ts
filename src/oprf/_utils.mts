@@ -1,4 +1,4 @@
-import { abytes, bytesToNumberBE, numberToBytesBE } from "@noble/curves/abstract/utils";
+import { abytes, bytesToNumberBE, numberToBytesBE } from "@noble/curves/utils.js";
 
 /**
  * Convert an unsigned bigint/number into a (big-endian) byte string of fixed length

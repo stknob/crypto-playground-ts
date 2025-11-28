@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha';
 
-import { hexToBytes } from "@noble/curves/abstract/utils";
+import { hexToBytes } from "@noble/curves/utils.js";
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/decaf448.mjs";
-import { runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
+import { BatchPoprfTestVector, BatchVoprfTestVector, MixedPoprfTestVector, MixedVoprfTestVector, OprfTestVector, runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
 
-const oprfTests = [{
+const oprfTests: OprfTestVector[] = [{
     name: "decaf448-CSHAKE256 - OPRF - Test Vector 1, Batch Size 1",
     seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
     keyInfo: hexToBytes("74657374206b6579"),
@@ -26,7 +26,7 @@ const oprfTests = [{
     output:  hexToBytes("a2a652290055cb0f6f8637a249ee45e32ef4667db0b4c80c0a70d2a64164d01525cfdad5d870a694ec77972b9b6ec5d2596a5223e5336913f945101f0137f55e"),
 }];
 
-const voprfTests = [{
+const voprfTests: MixedVoprfTestVector[] = [{
     name: "decaf448-SHAKE256 - VOPRF - Test Vector 1, Batch Size 1",
     seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
     keyInfo: hexToBytes("74657374206b6579"),
@@ -80,9 +80,9 @@ const voprfTests = [{
         hexToBytes("e2ac40b634f36cccd8262b285adff7c9dcc19cd308564a5f4e581d1a8535773b86fa4fc9f2203c370763695c5093aea4a7aedec4488b1340ba3bf663a23098c1"),
         hexToBytes("862952380e07ec840d9f6e6f909c5a25d16c3dacb586d89a181b4aa7380c959baa8c480fe8e6c64e089d68ea7aeeb5817bd524d7577905b5bab487690048c941"),
     ],
-}];
+} as BatchVoprfTestVector];
 
-const poprfTests = [{
+const poprfTests: MixedPoprfTestVector[] = [{
     name: "decaf448-SHAKE256 - POPRF - Test Vector 1, Batch Size 1",
     seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
     keyInfo: hexToBytes("74657374206b6579"),
@@ -139,7 +139,7 @@ const poprfTests = [{
         hexToBytes("4423f6dcc1740688ea201de57d76824d59cd6b859e1f9884b7eebc49b0b971358cf9cb075df1536a8ea31bcf55c3e31c2ba9cfa8efe54448d17091daeb9924ed"),
         hexToBytes("8691905500510843902c44bdd9730ab9dc3925aa58ff9dd42765a2baf633126de0c3adb93bef5652f38e5827b6396e87643960163a560fc4ac9738c8de4e4a8d"),
     ],
-}];
+} as BatchPoprfTestVector];
 
 describe("decaf448-CSHAKE256", () => {
     it('OPRF RFC9497 test vectors',  () => runOPRFTests(OPRF, oprfTests));

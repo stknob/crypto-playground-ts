@@ -41,4 +41,4 @@ Possible upcoming changes:
 
 ### Links
 - [RFC 9494 - Oblivious Pseudorandom Functions (OPRFs) Using Prime-Order Groups](https://datatracker.ietf.org/doc/html/rfc9497)
-- [draft-irtf-cfrg-opaque-18 - OPAQUE Draft 18](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-opaque-18)
+- [RFC 9807 - The OPAQUE Augmented Password-Authenticated Key Exchange (aPAKE) Protocol](https://datatracker.ietf.org/doc/html/rfc9807)

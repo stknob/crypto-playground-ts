@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { client, server } from "../../../src/nopaque/ristretto255.mjs";
 import { TestVector, runRoundtripTest, runTestVectors } from './_nopaque.mjs';
-import { hexToBytes } from '@noble/curves/abstract/utils';
+import { hexToBytes } from '@noble/curves/utils.js';
 
 /**
  * OPAQUE-3DH Draft 18 Test vectors, modified for nopaque

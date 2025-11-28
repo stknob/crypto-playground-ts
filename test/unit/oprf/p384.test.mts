@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha';
 
-import { hexToBytes } from "@noble/curves/abstract/utils";
+import { hexToBytes } from "@noble/curves/utils.js";
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/p384.mjs";
-import { runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
+import { BatchPoprfTestVector, BatchVoprfTestVector, MixedPoprfTestVector, MixedVoprfTestVector, OprfTestVector, runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
 
-const oprfTests = [{
+const oprfTests: OprfTestVector[] = [{
 	name: "P384-SHA384 - OPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -26,7 +26,7 @@ const oprfTests = [{
 	output:  hexToBytes("dd4f29da869ab9355d60617b60da0991e22aaab243a3460601e48b075859d1c526d36597326f1b985778f781a1682e75"),
 }];
 
-const voprfTests = [{
+const voprfTests: MixedVoprfTestVector[] = [{
 	name: "P384-SHA384 - VOPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -80,9 +80,9 @@ const voprfTests = [{
 		hexToBytes("3333230886b562ffb8329a8be08fea8025755372817ec969d114d1203d026b4a622beab60220bf19078bca35a529b35c"),
 		hexToBytes("b91c70ea3d4d62ba922eb8a7d03809a441e1c3c7af915cbc2226f485213e895942cd0f8580e6d99f82221e66c40d274f"),
 	],
-}];
+} as BatchVoprfTestVector];
 
-const poprfTests = [{
+const poprfTests: MixedPoprfTestVector[] = [{
 	name: "P384-SHA384 - POPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -139,7 +139,7 @@ const poprfTests = [{
 		hexToBytes("0188653cfec38119a6c7dd7948b0f0720460b4310e40824e048bf82a16527303ed449a08caf84272c3bbc972ede797df"),
 		hexToBytes("ff2a527a21cc43b251a567382677f078c6e356336aec069dea8ba36995343ca3b33bb5d6cf15be4d31a7e6d75b30d3f5"),
 	],
-}];
+} as BatchPoprfTestVector];
 
 
 describe("P384-SHA384", () => {

@@ -1,4 +1,4 @@
-import { abytes } from "@noble/curves/abstract/utils";
+import { abytes } from "@noble/curves/utils.js";
 
 /**
  *

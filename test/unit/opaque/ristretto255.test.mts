@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 
 import { client, server } from "../../../src/opaque/ristretto255.mjs";
 import { TestVector, runRoundtripTest, runTestVectors } from './_opaque.mjs';
-import { hexToBytes } from '@noble/curves/abstract/utils';
+import { hexToBytes } from '@noble/curves/utils.js';
 
 const vectors: TestVector[] = [{
 	// D.1.1. OPAQUE-3DH Real Test Vector 1

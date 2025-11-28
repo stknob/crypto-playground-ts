@@ -1,8 +1,8 @@
 import { expect, use } from 'chai';
 import chaibytes from 'chai-bytes';
 
-import { Group } from '@noble/curves/abstract/curve';
-import { utf8ToBytes } from "@noble/curves/abstract/utils";
+import { Group } from '@noble/curves/abstract/curve.js';
+import { utf8ToBytes } from "@noble/curves/utils.js";
 import { type ClientState, type ServerState } from "../../../src/opaque/ristretto255.mjs";
 import { ClientOpts, Client, Server, ServerOpts } from '../../../src/opaque/_opaque.mjs';
 import { Keypair } from '../../../src/oprf/_oprf.mjs';

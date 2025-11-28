@@ -1,12 +1,24 @@
 import { expect, use } from 'chai';
 import chaibytes from 'chai-bytes';
 
-import { Group } from '@noble/curves/abstract/curve';
+import { Group } from '@noble/curves/abstract/curve.js';
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/_oprf.mjs";
 
 use(chaibytes);
 
-export function runOPRFTests<T extends Group<T>>(oprf: OPRF<T>, tests) {
+export type OprfTestVector = {
+	seed: Uint8Array,
+	name: string,
+	keyInfo: Uint8Array,
+	skS: Uint8Array,
+	blind: Uint8Array,
+	input: Uint8Array,
+	blindedElement: Uint8Array,
+	evaluationElement: Uint8Array,
+	output: Uint8Array,
+};
+
+export function runOPRFTests<T extends Group<T>>(oprf: OPRF<T>, tests: OprfTestVector[]) {
 	for (const test of tests) {
 		const keyPair = oprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keyPair.secretKey, `${test.name}: 'secretKey' does not match expected`)
@@ -37,7 +49,27 @@ export function runOPRFTests<T extends Group<T>>(oprf: OPRF<T>, tests) {
 	}
 }
 
-export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests) {
+export type VoprfTestVector = & OprfTestVector & {
+	pkS: Uint8Array,
+	proof: Uint8Array,
+	proofRandomScalar: Uint8Array,
+};
+
+export type BatchVoprfTestVector = VoprfTestVector & {
+	blind: Uint8Array[],
+	input: Uint8Array[],
+	blindedElement: Uint8Array[],
+	evaluationElement: Uint8Array[],
+	output: Uint8Array[],
+};
+
+export type MixedVoprfTestVector = VoprfTestVector|BatchVoprfTestVector;
+
+function isBatchVoprfTestVector(vector: MixedVoprfTestVector): vector is BatchVoprfTestVector {
+	return Array.isArray(vector.blind);
+}
+
+export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests: MixedVoprfTestVector[]) {
 	for (const test of tests) {
 		const keypair = voprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keypair.secretKey, `${test.name}: 'secretKey' does not match expected`)
@@ -45,8 +77,8 @@ export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests) {
 		expect(keypair.publicKey, `${test.name}: 'publicKey' does not match expected`)
 			.to.be.equalBytes(test.pkS);
 
-		if (Array.isArray(test.blind)) {
-			const { blinds, blindedElements } = test.blind.reduce((res, _, idx) => {
+		if (isBatchVoprfTestVector(test)) {
+			const { blinds, blindedElements } = test.blind.reduce((res: any, _: any, idx: number) => {
 				// Client: Blind
 				const blindRandomScalar = voprf.suite.decodeScalar(test.blind[idx]);
 				const { blind, blindedElement } = voprf.blind(test.input[idx], { blindRandomScalar });
@@ -70,7 +102,7 @@ export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests) {
 					.to.be.equalBytes(test.evaluationElement[idx]);
 			});
 
-			test.output.forEach((_, idx) => {
+			test.output.forEach((_: any, idx: number) => {
 				// Server: Evaluate (optional)
 				const output = voprf.evaluate(keypair.secretKey, test.input[idx]);
 				expect(output, `${test.name}: 'evaluate' output does not match expected`)
@@ -114,7 +146,30 @@ export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests) {
 	}
 }
 
-export function runPOPRFTests<T extends Group<T>>(poprf: POPRF<T>, tests) {
+
+export type PoprfTestVector = OprfTestVector & {
+	info: Uint8Array,
+	pkS: Uint8Array,
+	proof: Uint8Array,
+	proofRandomScalar: Uint8Array,
+};
+
+export type BatchPoprfTestVector = PoprfTestVector & {
+	blind: Uint8Array[],
+	input: Uint8Array[],
+	blindedElement: Uint8Array[],
+	evaluationElement: Uint8Array[],
+	output: Uint8Array[],
+};
+
+export type MixedPoprfTestVector = PoprfTestVector|BatchPoprfTestVector;
+
+function isBatchPoprfTestVector(vector: MixedPoprfTestVector): vector is BatchPoprfTestVector {
+	return Array.isArray(vector.blind);
+}
+
+
+export function runPOPRFTests<T extends Group<T>>(poprf: POPRF<T>, tests: MixedPoprfTestVector[]) {
 	for (const test of tests) {
 		const keypair = poprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keypair.secretKey, `${test.name}: 'secretKey' does not match expected`)
@@ -122,8 +177,8 @@ export function runPOPRFTests<T extends Group<T>>(poprf: POPRF<T>, tests) {
 		expect(keypair.publicKey, `${test.name}: 'publicKey' does not match expected`)
 			.to.be.equalBytes(test.pkS);
 
-		if (Array.isArray(test.blind)) {
-			const { blinds, blindedElements, tweakedKey } = test.blind.reduce((res, _, idx) => {
+		if (isBatchPoprfTestVector(test)) {
+			const { blinds, blindedElements, tweakedKey } = test.blind.reduce((res: any, _: any, idx: number) => {
 				// Client: Blind
 				const blindRandomScalar = poprf.suite.decodeScalar(test.blind[idx]);
 				const { blind, blindedElement, tweakedKey } = poprf.blind(test.input[idx], test.info, keypair.publicKey, { blindRandomScalar });
@@ -148,7 +203,7 @@ export function runPOPRFTests<T extends Group<T>>(poprf: POPRF<T>, tests) {
 					.to.be.equalBytes(test.evaluationElement[idx]);
 			});
 
-			test.output.forEach((_, idx) => {
+			test.output.forEach((_: any, idx: number) => {
 				// Server: Evaluate (optional)
 				const output = poprf.evaluate(keypair.secretKey, test.input[idx], test.info);
 				expect(output, `${test.name}: 'evaluate' output does not match expected`)

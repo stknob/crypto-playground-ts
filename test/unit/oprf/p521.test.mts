@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha';
 
-import { hexToBytes } from "@noble/curves/abstract/utils";
+import { hexToBytes } from "@noble/curves/utils.js";
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/p521.mjs";
-import { runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
+import { BatchPoprfTestVector, BatchVoprfTestVector, MixedPoprfTestVector, MixedVoprfTestVector, OprfTestVector, runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
 
-const oprfTests = [{
+const oprfTests: OprfTestVector[] = [{
 	name: "P512-SHA512 - OPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -26,7 +26,7 @@ const oprfTests = [{
 	output:  hexToBytes("ad1f76ef939042175e007738906ac0336bbd1d51e287ebaa66901abdd324ea3ffa40bfc5a68e7939c2845e0fd37a5a6e76dadb9907c6cc8579629757fd4d04ba"),
 }];
 
-const voprfTests = [{
+const voprfTests: MixedVoprfTestVector[] = [{
 	name: "P512-SHA512 - VOPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -80,9 +80,9 @@ const voprfTests = [{
 		hexToBytes("5e003d9b2fb540b3d4bab5fedd154912246da1ee5e557afd8f56415faa1a0fadff6517da802ee254437e4f60907b4cda146e7ba19e249eef7be405549f62954b"),
 		hexToBytes("fa15eebba81ecf40954f7135cb76f69ef22c6bae394d1a4362f9b03066b54b6604d39f2e53369ca6762a3d9787e230e832aa85955af40ecb8deebb009a8cf474"),
 	],
-}];
+} as BatchVoprfTestVector];
 
-const poprfTests = [{
+const poprfTests: MixedPoprfTestVector[] = [{
 	name: "P512-SHA512 - POPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -139,7 +139,7 @@ const poprfTests = [{
 		hexToBytes("808ae5b87662eaaf0b39151dd85991b94c96ef214cb14a68bf5c143954882d330da8953a80eea20788e552bc8bbbfff3100e89f9d6e341197b122c46a208733b"),
 		hexToBytes("27032e24b1a52a82ab7f4646f3c5df0f070f499db98b9c5df33972bd5af5762c3638afae7912a6c1acdb1ae2ab2fa670bd5486c645a0e55412e08d33a4a0d6e3"),
 	],
-}];
+} as BatchPoprfTestVector];
 
 
 describe("P512-SHA512", () => {

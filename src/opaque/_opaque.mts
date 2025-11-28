@@ -1,6 +1,6 @@
 import { abytes, anumber, concatBytes, randomBytes, utf8ToBytes } from "@noble/hashes/utils.js";
-import { CHash, equalBytes } from "@noble/curves/abstract/utils.js";
-import { Group } from '@noble/curves/abstract/curve';
+import { CHash, equalBytes } from "@noble/curves/utils.js";
+import { Group } from '@noble/curves/abstract/curve.js';
 
 import { hmac } from '@noble/hashes/hmac.js';
 import { expand, extract } from '@noble/hashes/hkdf.js';

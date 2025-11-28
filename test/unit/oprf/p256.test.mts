@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha';
 
-import { hexToBytes } from "@noble/curves/abstract/utils";
+import { hexToBytes } from "@noble/curves/utils.js";
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/p256.mjs";
-import { runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
+import { BatchPoprfTestVector, BatchVoprfTestVector, MixedPoprfTestVector, MixedVoprfTestVector, OprfTestVector, runOPRFTests, runPOPRFTests, runVOPRFTests } from './_oprf.mjs';
 
-const oprfTests = [{
+const oprfTests: OprfTestVector[] = [{
 	name: "P256-SHA256 - OPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -26,7 +26,7 @@ const oprfTests = [{
 	output:  hexToBytes("c748ca6dd327f0ce85f4ae3a8cd6d4d5390bbb804c9e12dcf94f853fece3dcce"),
 }];
 
-const voprfTests = [{
+const voprfTests: MixedVoprfTestVector[] = [{
 	name: "P256-SHA256 - VOPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -80,9 +80,9 @@ const voprfTests = [{
 		hexToBytes("0412e8f78b02c415ab3a288e228978376f99927767ff37c5718d420010a645a1"),
 		hexToBytes("771e10dcd6bcd3664e23b8f2a710cfaaa8357747c4a8cbba03133967b5c24f18"),
 	],
-}];
+} as BatchVoprfTestVector];
 
-const poprfTests = [{
+const poprfTests: MixedPoprfTestVector[] = [{
 	name: "P256-SHA256 - POPRF - Test Vector 1, Batch Size 1",
 	seed:    hexToBytes("a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3"),
 	keyInfo: hexToBytes("74657374206b6579"),
@@ -139,7 +139,7 @@ const poprfTests = [{
 		hexToBytes("193a92520bd8fd1f37accb918040a57108daa110dc4f659abe212636d245c592"),
 		hexToBytes("1e6d164cfd835d88a31401623549bf6b9b306628ef03a7962921d62bc5ffce8c"),
 	],
-}];
+} as BatchPoprfTestVector];
 
 
 describe("P256-SHA256", () => {
