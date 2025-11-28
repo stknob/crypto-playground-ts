@@ -402,7 +402,7 @@ export interface VOPRF<E extends Group<E>> extends OPRFCommon<E> {
 }
 
 /** */
-export function createVOPRF<T extends Group<T>>(suite: Suite<T>): VOPRF<T> {
+export function createVOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<VOPRF<T>> {
 	return Object.freeze({
 		...createCommon(Mode.VOPRF, suite),
 		blind(input: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: T }> {
@@ -516,7 +516,7 @@ export interface POPRF<E extends Group<E>> extends OPRFCommon<E> {
 }
 
 /** */
-export function createPOPRF<T extends Group<T>>(suite: Suite<T>): POPRF<T> {
+export function createPOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<POPRF<T>> {
 	return Object.freeze({
 		...createCommon(Mode.POPRF, suite),
 		blind(input: Uint8Array, info: Uint8Array, publicKey: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: T, tweakedKey: T }> {
