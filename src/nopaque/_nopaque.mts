@@ -1,6 +1,6 @@
 import { abytes, anumber, concatBytes, randomBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 import { CHash, equalBytes } from "@noble/curves/utils.js";
-import { Group } from '@noble/curves/abstract/curve.js';
+import { CurvePoint } from '@noble/curves/abstract/curve.js';
 
 import { hmac } from '@noble/hashes/hmac.js';
 import { expand, extract } from '@noble/hashes/hkdf.js';
@@ -30,7 +30,7 @@ const Labels = Object.freeze({
 export class NopaqueError extends Error {};
 export class EnvelopeRecoveryError extends NopaqueError {};
 
-type SuiteOpts<T extends Group<T>> = {
+type SuiteOpts<T extends CurvePoint<any, T>> = {
 	oprf: OPRF<T>,
 	hash: CHash,    // Hash
 	Nh: number,     // Hash output size in bytes
@@ -44,14 +44,14 @@ type SuiteOpts<T extends Group<T>> = {
 	Nx: number,     //
 };
 
-export type Suite<T extends Group<T>> = SuiteOpts<T> & {
+export type Suite<T extends CurvePoint<any, T>> = SuiteOpts<T> & {
 	encodeScalar: OprfSuite<T>["encodeScalar"],
 	decodeScalar: OprfSuite<T>["decodeScalar"],
 	encodeElement: OprfSuite<T>["encodeElement"],
 	decodeElement: OprfSuite<T>["decodeElement"],
 };
 
-export function createSuite<T extends Group<T>>(opts: SuiteOpts<T>): Readonly<Suite<T>> {
+export function createSuite<T extends CurvePoint<any, T>>(opts: SuiteOpts<T>): Readonly<Suite<T>> {
 	const { suite: oprfSuite } = opts.oprf;
 	return Object.freeze({
 		...opts,
@@ -62,12 +62,12 @@ export function createSuite<T extends Group<T>>(opts: SuiteOpts<T>): Readonly<Su
 	});
 }
 
-interface ServerConfig<T extends Group<T>> {
+interface ServerConfig<T extends CurvePoint<any, T>> {
 	suite: Suite<T>,
 	customDeriveKeyPairLabel?: Uint8Array,
 }
 
-interface ClientConfig<T extends Group<T>> {
+interface ClientConfig<T extends CurvePoint<any, T>> {
 	suite: Suite<T>,
 	stretch(msg: Uint8Array): Promise<Uint8Array>,
 	customDeriveDhKeyPairLabel?: Uint8Array,
@@ -123,7 +123,7 @@ interface StoreResult {
  * 4.1.2. Envelope Creation
  * Client:
  */
-function store<T extends Group<T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: StoreOptions): StoreResult {
+function store<T extends CurvePoint<any, T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: StoreOptions): StoreResult {
 	const envelopeNonce = options?.envelopeNonce ?? randomBytes(suite.Nn);
 	const maskingKey = expand(suite.hash, randomizedPassword, Labels.MASKING_KEY, suite.Nh);
 	const exportKey  = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.EXPORT_KEY), suite.Nh);
@@ -166,7 +166,7 @@ interface RecoverResult {
 /**
  * Client:
  */
-function recover<T extends Group<T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, envelope: Envelope, serverIdentity: Uint8Array, clientIdentity: Uint8Array, options?: RecoverOptions): RecoverResult {
+function recover<T extends CurvePoint<any, T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, envelope: Envelope, serverIdentity: Uint8Array, clientIdentity: Uint8Array, options?: RecoverOptions): RecoverResult {
 	const [ envelopeNonce, envelopeAuthTag ]  = splitByteFields(envelope, [ suite.Nn, suite.Nm ]);
 	const exportKey = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.EXPORT_KEY), suite.Nh);
 	const authKey = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.AUTH_KEY), suite.Nh);
@@ -266,7 +266,7 @@ interface CreateRecoverResponseOptions {
 }
 
 const EMPTY_SALT = new Uint8Array(16);
-function defaultStretch<T extends Group<T>>(suite: Suite<T>, msg: Uint8Array): Promise<Uint8Array> {
+function defaultStretch<T extends CurvePoint<any, T>>(suite: Suite<T>, msg: Uint8Array): Promise<Uint8Array> {
 	anumber(suite.Nh); abytes(msg);
 	return argon2idAsync(msg, EMPTY_SALT, { dkLen: suite.Nh, p: 4, m: 2048, t: 1 });
 }
@@ -282,7 +282,7 @@ export type ClientOpts = {
 };
 
 
-export type Client<T extends Group<T>> = ClientOpts & {
+export type Client<T extends CurvePoint<any, T>> = ClientOpts & {
 	randomSecret(): Uint8Array,
 	createRegistrationRequest(password: Uint8Array, options?: CreateRegistrationOptions): CreateRegistrationRequestResult,
 	finalizeRegistrationRequest(password: Uint8Array, blind: Uint8Array, response: RegistrationResponse, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: FinalizeRegistrationOptions): Promise<FinalizeRegistrationRequestResult>,
@@ -290,7 +290,7 @@ export type Client<T extends Group<T>> = ClientOpts & {
 	finalizeRecoverRequest(state: ClientState, ke2: RecoverResponse, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array): Promise<Uint8Array>,
 };
 
-export function createClient<T extends Group<T>>(suite: Suite<T>, opts: ClientOpts): Client<T> {
+export function createClient<T extends CurvePoint<any, T>>(suite: Suite<T>, opts: ClientOpts): Client<T> {
 	const config = { suite, stretch: (msg) => defaultStretch(suite, msg), ...(opts ?? {}) } as ClientConfig<T>;
 	return Object.freeze({
 		...opts,
@@ -353,14 +353,14 @@ export function createClient<T extends Group<T>>(suite: Suite<T>, opts: ClientOp
 
 
 
-export type Server<T extends Group<T>> = ServerOpts & {
+export type Server<T extends CurvePoint<any, T>> = ServerOpts & {
 	randomSeed(): Uint8Array,
 	randomKeypair(): Keypair,
 	createRegistrationResponse(request: RegistrationRequest, serverPublicKey: Uint8Array, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array): RegistrationResponse,
 	createRecoverResponse(serverKeypair: Keypair, record: RegistrationRecord, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array, ke1: RecoverRequest, options?: CreateRecoverResponseOptions): RecoverResponse,
 };
 
-export function createServer<T extends Group<T>>(suite: Suite<T>, opts: ServerOpts): Server<T> {
+export function createServer<T extends CurvePoint<any, T>>(suite: Suite<T>, opts: ServerOpts): Server<T> {
 	const config = { suite, ...(opts ?? {}) } as ServerConfig<T>;
 	return Object.freeze({
 		...opts,

@@ -7,22 +7,22 @@ import { createOPRF, createPOPRF, createVOPRF, InvalidInputError, InverseError, 
 export { Keypair, InvalidInputError, InverseError }; // Reexport important types
 
 // Weird type override to fix RistrettoPoint being a value of type RistPoint
-export type secp521r1Point = InstanceType<typeof p521.Point>;
+export type P521Point = InstanceType<typeof p521.Point>;
+export type P521Curve = ReturnType<typeof p521.Point.CURVE>;
 
-const secp521r1Suite: Suite<secp521r1Point> = Object.freeze({
+const suite: Suite<P521Point> = Object.freeze({
 	id: "P521-SHA512",
-	curve: p521.CURVE,
 	point: p521.Point,
-	field: mod.Field(p521.CURVE.n, undefined, false),
+	field: mod.Field(p521.Point.CURVE().n, undefined, false),
 	elementSize: 67,
 	scalarSize: 66,
 	hash: sha512,
 	outputSize: 64,
 	// Interface methods
-	encodeElement(point: secp521r1Point): Uint8Array {
+	encodeElement(point: P521Point): Uint8Array {
 		return point.toBytes();
 	},
-	decodeElement(bytes: Uint8Array): secp521r1Point {
+	decodeElement(bytes: Uint8Array): P521Point {
 		return p521.Point.fromHex(bytes);
 	},
 	randomScalar(): bigint {
@@ -35,14 +35,14 @@ const secp521r1Suite: Suite<secp521r1Point> = Object.freeze({
 	decodeScalar(bytes: Uint8Array): bigint {
 		return p521.Point.Fn.fromBytes(bytes);
 	},
-	hashToScalar(msg: Uint8Array, dst: Uint8Array): bigint {
-		return p521_hasher.hashToScalar(msg, { DST: dst });
+	hashToScalar(msg: Uint8Array, DST: Uint8Array): bigint {
+		return p521_hasher.hashToScalar(msg, { DST });
 	},
-	hashToGroup(msg: Uint8Array, dst: Uint8Array): secp521r1Point {
-		return p521_hasher.hashToCurve(msg, { DST: dst }) as secp521r1Point;
+	hashToGroup(msg: Uint8Array, DST: Uint8Array): P521Point {
+		return p521_hasher.hashToCurve(msg, { DST }) as P521Point;
 	},
 });
 
-export const OPRF = createOPRF(secp521r1Suite);
-export const VOPRF = createVOPRF(secp521r1Suite);
-export const POPRF = createPOPRF(secp521r1Suite);
+export const OPRF = (() => createOPRF(suite))();
+export const VOPRF = (() => createVOPRF(suite))();
+export const POPRF = (() => createPOPRF(suite))();

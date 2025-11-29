@@ -1,6 +1,6 @@
 import { abytes, anumber, concatBytes, randomBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 import { CHash, equalBytes } from "@noble/curves/utils.js";
-import { Group } from '@noble/curves/abstract/curve.js';
+import { CurvePoint } from '@noble/curves/abstract/curve.js';
 
 import { hmac } from '@noble/hashes/hmac.js';
 import { expand, extract } from '@noble/hashes/hkdf.js';
@@ -36,7 +36,7 @@ export class ServerAuthenticationError extends OpaqueError {};
 export class ClientAuthenticationError extends OpaqueError {};
 
 
-type SuiteOpts<T extends Group<T>> = {
+type SuiteOpts<T extends CurvePoint<any, T>> = {
 	oprf: OPRF<T>,
 	hash: CHash,    // Hash
 	Nh: number,     // Hash output size in bytes
@@ -50,14 +50,14 @@ type SuiteOpts<T extends Group<T>> = {
 	Nx: number,     //
 };
 
-export type Suite<T extends Group<T>> = SuiteOpts<T> & {
+export type Suite<T extends CurvePoint<any, T>> = SuiteOpts<T> & {
 	encodeScalar: OprfSuite<T>["encodeScalar"],
 	decodeScalar: OprfSuite<T>["decodeScalar"],
 	encodeElement: OprfSuite<T>["encodeElement"],
 	decodeElement: OprfSuite<T>["decodeElement"],
 };
 
-export function createSuite<T extends Group<T>>(opts: SuiteOpts<T>): Readonly<Suite<T>> {
+export function createSuite<T extends CurvePoint<any, T>>(opts: SuiteOpts<T>): Readonly<Suite<T>> {
 	const { suite: oprfSuite } = opts.oprf;
 	return Object.freeze({
 		...opts,
@@ -69,12 +69,12 @@ export function createSuite<T extends Group<T>>(opts: SuiteOpts<T>): Readonly<Su
 }
 
 
-interface ServerConfig<T extends Group<T>> {
+interface ServerConfig<T extends CurvePoint<any, T>> {
 	suite: Suite<T>,
 	context?: Uint8Array,
 }
 
-interface ClientConfig<T extends Group<T>> extends ServerConfig<T> {
+interface ClientConfig<T extends CurvePoint<any, T>> extends ServerConfig<T> {
 	stretch(msg: Uint8Array): Promise<Uint8Array>,
 }
 
@@ -117,7 +117,7 @@ interface StoreResult {
  * 4.1.2. Envelope Creation
  * Client:
  */
-function store<T extends Group<T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: StoreOptions): StoreResult {
+function store<T extends CurvePoint<any, T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: StoreOptions): StoreResult {
 	const envelopeNonce = options?.envelopeNonce ?? randomBytes(suite.Nn); // Nn = 32 (?)
 	const maskingKey = expand(suite.hash, randomizedPassword, Labels.MASKING_KEY, suite.Nh);	// "Nh"?
 	const exportKey  = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.EXPORT_KEY), suite.Nh);		// "Nh"?
@@ -153,7 +153,7 @@ interface RecoverResult {
 /**
  * Client:
  */
-function recover<T extends Group<T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, envelope: Envelope, serverIdentity: Uint8Array, clientIdentity: Uint8Array): RecoverResult {
+function recover<T extends CurvePoint<any, T>>(suite: Suite<T>, randomizedPassword: Uint8Array, serverPublicKey: Uint8Array, envelope: Envelope, serverIdentity: Uint8Array, clientIdentity: Uint8Array): RecoverResult {
 	const [ envelopeNonce, envelopeAuthTag ] = splitByteFields(envelope, [ suite.Nn, suite.Nm ]);
 	const exportKey  = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.EXPORT_KEY), suite.Nh);	// "Nh"?
 	const authKey  = expand(suite.hash, randomizedPassword, concatBytes(envelopeNonce, Labels.AUTH_KEY), suite.Nh);		// "Nh"?
@@ -196,7 +196,7 @@ interface CreateRegistrationRequestResult {
 /**
  * Client:
  */
-function createRegistrationRequest<T extends Group<T>>(config: ClientConfig<T>, password: Uint8Array, options?: CreateRegistrationOptions): CreateRegistrationRequestResult {
+function createRegistrationRequest<T extends CurvePoint<any, T>>(config: ClientConfig<T>, password: Uint8Array, options?: CreateRegistrationOptions): CreateRegistrationRequestResult {
 	const { suite } = config;
 	const { blind, blindedElement } = suite.oprf.blind(password, { blindRandomScalar: options?.blind && suite.oprf.decodeScalar(options.blind) });
 	const blindedMessage = suite.encodeElement(blindedElement);
@@ -218,7 +218,7 @@ type RegistrationResponse = Uint8Array;
  * @param credentialIdentifier ??
  * @param oprfSeed Nh bytes of seed to generate oprf key
  */
-function createRegistrationResponse<T extends Group<T>>(config: ServerConfig<T>, request: RegistrationRequest, serverPublicKey: Uint8Array, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array): RegistrationResponse {
+function createRegistrationResponse<T extends CurvePoint<any, T>>(config: ServerConfig<T>, request: RegistrationRequest, serverPublicKey: Uint8Array, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array): RegistrationResponse {
 	const { suite } = config;
 	const seed = expand(suite.hash, oprfSeed, concatBytes(credentialIdentifier, Labels.OPRF_KEY), suite.Nok);	// Nok??
 	const { secretKey: oprfKey } = suite.oprf.deriveKeypair(seed, Labels.OPAQUE_DERIVE_KEYPAIR);
@@ -247,7 +247,7 @@ interface FinalizeRegistrationResult {
 /**
  * Client: Generate record
  */
-async function finalizeRegistrationRequest<T extends Group<T>>(config: ClientConfig<T>, password: Uint8Array, blind: Uint8Array, response: RegistrationResponse, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: FinalizeRegistrationOptions): Promise<FinalizeRegistrationResult> {
+async function finalizeRegistrationRequest<T extends CurvePoint<any, T>>(config: ClientConfig<T>, password: Uint8Array, blind: Uint8Array, response: RegistrationResponse, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: FinalizeRegistrationOptions): Promise<FinalizeRegistrationResult> {
 	const { suite } = config;
 	const [ evaluatedMessage, serverPublicKey ] = splitByteFields(response, [ suite.Noe, suite.Npk ]);
 	const evaluatedElement = suite.decodeElement(evaluatedMessage);
@@ -280,7 +280,7 @@ interface CreateCredentialRequestResult {
 	blind: Uint8Array,
 }
 
-function createCredentialRequest<T extends Group<T>>(config: ClientConfig<T>, password: Uint8Array, options?: CreateCredentialRequestOptions): CreateCredentialRequestResult {
+function createCredentialRequest<T extends CurvePoint<any, T>>(config: ClientConfig<T>, password: Uint8Array, options?: CreateCredentialRequestOptions): CreateCredentialRequestResult {
 	const { suite } = config;
 	const { blind, blindedElement } = suite.oprf.blind(password, { blindRandomScalar: options?.blind && suite.decodeScalar(options.blind) });
 	const blindedMessage = suite.encodeElement(blindedElement);
@@ -295,7 +295,7 @@ interface CreateCredentialOptions {
 	maskingNonce?: Uint8Array,
 }
 
-function createCredentialResponse<T extends Group<T>>(config: ServerConfig<T>, request: CredentialRequest, serverPublicKey: Uint8Array, record: RegistrationRecord, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array, options?: CreateCredentialOptions): CredentialResponse {
+function createCredentialResponse<T extends CurvePoint<any, T>>(config: ServerConfig<T>, request: CredentialRequest, serverPublicKey: Uint8Array, record: RegistrationRecord, credentialIdentifier: Uint8Array, oprfSeed: Uint8Array, options?: CreateCredentialOptions): CredentialResponse {
 	const { suite } = config;
 	const seed = expand(suite.hash, oprfSeed, concatBytes(credentialIdentifier, Labels.OPRF_KEY), suite.Nok);	// Nok
 	const { secretKey: oprfKey } = suite.oprf.deriveKeypair(seed, Labels.OPAQUE_DERIVE_KEYPAIR);
@@ -330,7 +330,7 @@ interface RecoverCredentialsResult {
 }
 
 // 6.3.2.3. RecoverCredentials
-async function recoverCredentials<T extends Group<T>>(config: ClientConfig<T>, password: Uint8Array, blind: Uint8Array, response: CredentialResponse, serverIdentity: Uint8Array, clientIdentity: Uint8Array): Promise<RecoverCredentialsResult> {
+async function recoverCredentials<T extends CurvePoint<any, T>>(config: ClientConfig<T>, password: Uint8Array, blind: Uint8Array, response: CredentialResponse, serverIdentity: Uint8Array, clientIdentity: Uint8Array): Promise<RecoverCredentialsResult> {
 	const { decodeScalar, decodeElement, oprf, hash, Nh, Nn, Npk, Nm, Noe } = config.suite;
 	const [ evaluatedMessage, maskingNonce, maskedResponse ] = splitByteFields(response, [ Noe, Nn, Npk + Nn + Nm ]);
 	const evaluatedElement = decodeElement(evaluatedMessage);
@@ -357,7 +357,7 @@ async function recoverCredentials<T extends Group<T>>(config: ClientConfig<T>, p
 
 
 // 6.4.2.1. Transcript Functions - Expand-Label
-function expandLabel<T extends Group<T>>(suite: Suite<T>, secret: Uint8Array, label: Uint8Array, context: Uint8Array, length: number): Uint8Array {
+function expandLabel<T extends CurvePoint<any, T>>(suite: Suite<T>, secret: Uint8Array, label: Uint8Array, context: Uint8Array, length: number): Uint8Array {
 	const labelSize = Labels.OPAQUE_PREFIX.length + (label?.length ?? 0);
 	return expand(suite.hash, secret, concatBytes(
 		I2OSP(length, 2),
@@ -366,12 +366,12 @@ function expandLabel<T extends Group<T>>(suite: Suite<T>, secret: Uint8Array, la
 }
 
 // 6.4.2.1. Transcript Functions - Derive-Secret
-function deriveSecret<T extends Group<T>>(suite: Suite<T>, secret: Uint8Array, label: Uint8Array, context: Uint8Array): Uint8Array {
+function deriveSecret<T extends CurvePoint<any, T>>(suite: Suite<T>, secret: Uint8Array, label: Uint8Array, context: Uint8Array): Uint8Array {
 	return expandLabel(suite, secret, label, context, suite.Nx);
 }
 
 // 6.4.2.2. Shared Secret Derivation - DeriveKeys
-function deriveKeys<T extends Group<T>>(suite: Suite<T>, ikm: Uint8Array, preamble: Uint8Array) {
+function deriveKeys<T extends CurvePoint<any, T>>(suite: Suite<T>, ikm: Uint8Array, preamble: Uint8Array) {
 	const prk = extract(suite.hash, ikm, EMPTY_BUFFER);
 	const hashedPreamble = suite.hash(preamble);
 	const handshakeSecret = deriveSecret(suite, prk, Labels.HANDSHAKE_SECRET, hashedPreamble);
@@ -418,7 +418,7 @@ interface AuthClientStartOptions {
  * @param request
  * @returns
  */
-function authClientStart<T extends Group<T>>(config: ClientConfig<T>, state: ClientState, request: CredentialRequest, options?: AuthClientStartOptions): KE1 {
+function authClientStart<T extends CurvePoint<any, T>>(config: ClientConfig<T>, state: ClientState, request: CredentialRequest, options?: AuthClientStartOptions): KE1 {
 	const { suite } = config;
 	const clientNonce = options?.clientNonce ?? randomBytes(suite.Nn);	// Nn
 	const clientKeyshareSeed = options?.clientKeyshareSeed ?? randomBytes(suite.Nseed);	// Nseed
@@ -441,7 +441,7 @@ interface AuthServerRespondOptions {
 }
 
 // 6.4.4. 3DH Server Functions
-function authServerRespond<T extends Group<T>>(config: ServerConfig<T>, state: ServerState, cleartextCredentials: CleartextCredentials, serverPrivateKey: Uint8Array, clientPublicKey: Uint8Array, ke1: KE1,
+function authServerRespond<T extends CurvePoint<any, T>>(config: ServerConfig<T>, state: ServerState, cleartextCredentials: CleartextCredentials, serverPrivateKey: Uint8Array, clientPublicKey: Uint8Array, ke1: KE1,
 	credentialResponse: CredentialResponse, options?: AuthServerRespondOptions): AuthResponse
 {
 	const { context, suite } = config;
@@ -496,7 +496,7 @@ interface AuthClientFinalizeResult {
 	ke3: KE3,
 }
 
-function authClientFinalize<T extends Group<T>>(config: ClientConfig<T>, state: ClientState, cleartextCredentials: CleartextCredentials, clientSecretKey: Uint8Array, ke2: KE2): AuthClientFinalizeResult {
+function authClientFinalize<T extends CurvePoint<any, T>>(config: ClientConfig<T>, state: ClientState, cleartextCredentials: CleartextCredentials, clientSecretKey: Uint8Array, ke2: KE2): AuthClientFinalizeResult {
 	const { context, suite } = config;
 	const clientSecretScalar = suite.decodeScalar(state.clientSecret);
 	const clientPrivateScalar = suite.decodeScalar(clientSecretKey);
@@ -545,7 +545,7 @@ function authClientFinalize<T extends Group<T>>(config: ClientConfig<T>, state: 
 	};
 }
 
-function authServerFinalize<T extends Group<T>>(config: ServerConfig<T>, state: ServerState, ke3: KE3): Uint8Array {
+function authServerFinalize<T extends CurvePoint<any, T>>(config: ServerConfig<T>, state: ServerState, ke3: KE3): Uint8Array {
 	const [ clientMac ] = splitByteFields(ke3, [ config.suite.Nm ]);
 	if (!equalBytes(state.expectedClientMac, clientMac))
 		throw new ClientAuthenticationError();
@@ -562,7 +562,7 @@ interface ClientFinishLoginResult {
 }
 
 const EMPTY_SALT = new Uint8Array(16);
-function defaultStretch<T extends Group<T>>(suite: Suite<T>, msg: Uint8Array): Promise<Uint8Array> {
+function defaultStretch<T extends CurvePoint<any, T>>(suite: Suite<T>, msg: Uint8Array): Promise<Uint8Array> {
 	anumber(suite.Nh); abytes(msg);
 	return argon2idAsync(msg, EMPTY_SALT, { dkLen: suite.Nh, p: 4, m: 2048, t: 1 });
 }
@@ -590,7 +590,7 @@ export type ClientOpts = CommonOpts & {
 };
 
 
-export type Client<T extends Group<T>> = ClientOpts & {
+export type Client<T extends CurvePoint<any, T>> = ClientOpts & {
 	suite: Readonly<Suite<T>>,
 	createRegistrationRequest(password: Uint8Array, options?: CreateRegistrationOptions): CreateCredentialRequestResult,
 	finalizeRegistrationRequest(password: Uint8Array, blind: Uint8Array, response: RegistrationResponse, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array, options?: FinalizeRegistrationOptions): Promise<FinalizeRegistrationResult>,
@@ -598,7 +598,7 @@ export type Client<T extends Group<T>> = ClientOpts & {
 	clientFinishLogin(state: ClientState, response: KE2, serverIdentity?: Uint8Array, clientIdentity?: Uint8Array): Promise<ClientFinishLoginResult>,
 };
 
-export function createClient<T extends Group<T>>(suite: Suite<T>, opts: ClientOpts): Client<T> {
+export function createClient<T extends CurvePoint<any, T>>(suite: Suite<T>, opts: ClientOpts): Client<T> {
 	const config = { suite, stretch: (msg) => defaultStretch(suite, msg), ...(opts ?? {}) } as ClientConfig<T>;
 	return Object.freeze({
 		suite, ...opts,
@@ -630,7 +630,7 @@ export function createClient<T extends Group<T>>(suite: Suite<T>, opts: ClientOp
 	});
 }
 
-export type Server<T extends Group<T>> = ServerOpts & {
+export type Server<T extends CurvePoint<any, T>> = ServerOpts & {
 	suite: Readonly<Suite<T>>,
 	randomSeed(): Uint8Array,
 	randomKeypair(): Keypair,
@@ -640,7 +640,7 @@ export type Server<T extends Group<T>> = ServerOpts & {
 	serverFinishLogin(state: ServerState, request: KE3): Uint8Array,
 };
 
-export function createServer<T extends Group<T>>(suite: Suite<T>, opts?: ServerOpts): Server<T> {
+export function createServer<T extends CurvePoint<any, T>>(suite: Suite<T>, opts?: ServerOpts): Server<T> {
 	const config = { suite, ...(opts ?? {}) } as ServerConfig<T>;
 	return Object.freeze({
 		suite, ...opts,

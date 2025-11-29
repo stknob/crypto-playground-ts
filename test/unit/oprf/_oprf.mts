@@ -1,7 +1,7 @@
 import { expect, use } from 'chai';
 import chaibytes from 'chai-bytes';
 
-import { Group } from '@noble/curves/abstract/curve.js';
+import { CurvePoint } from '@noble/curves/abstract/curve.js';
 import { OPRF, VOPRF, POPRF } from "../../../src/oprf/_oprf.mjs";
 
 use(chaibytes);
@@ -18,7 +18,7 @@ export type OprfTestVector = {
 	output: Uint8Array,
 };
 
-export function runOPRFTests<T extends Group<T>>(oprf: OPRF<T>, tests: OprfTestVector[]) {
+export function runOPRFTests<T extends CurvePoint<any, T>>(oprf: OPRF<T>, tests: OprfTestVector[]) {
 	for (const test of tests) {
 		const keyPair = oprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keyPair.secretKey, `${test.name}: 'secretKey' does not match expected`)
@@ -69,7 +69,7 @@ function isBatchVoprfTestVector(vector: MixedVoprfTestVector): vector is BatchVo
 	return Array.isArray(vector.blind);
 }
 
-export function runVOPRFTests<T extends Group<T>>(voprf: VOPRF<T>, tests: MixedVoprfTestVector[]) {
+export function runVOPRFTests<T extends CurvePoint<any, T>>(voprf: VOPRF<T>, tests: MixedVoprfTestVector[]) {
 	for (const test of tests) {
 		const keypair = voprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keypair.secretKey, `${test.name}: 'secretKey' does not match expected`)
@@ -169,7 +169,7 @@ function isBatchPoprfTestVector(vector: MixedPoprfTestVector): vector is BatchPo
 }
 
 
-export function runPOPRFTests<T extends Group<T>>(poprf: POPRF<T>, tests: MixedPoprfTestVector[]) {
+export function runPOPRFTests<T extends CurvePoint<any, T>>(poprf: POPRF<T>, tests: MixedPoprfTestVector[]) {
 	for (const test of tests) {
 		const keypair = poprf.deriveKeypair(test.seed, test.keyInfo);
 		expect(keypair.secretKey, `${test.name}: 'secretKey' does not match expected`)

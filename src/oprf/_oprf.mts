@@ -1,5 +1,5 @@
 import * as mod from "@noble/curves/abstract/modular.js";
-import { BasicCurve, Group, GroupConstructor } from "@noble/curves/abstract/curve.js";
+import { CurvePoint, CurvePointCons } from "@noble/curves/abstract/curve.js";
 
 import { CHash, concatBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 import { abytes } from "@noble/curves/utils.js";
@@ -51,10 +51,9 @@ export type GenerateProofOptions = {
 	proofRandomScalar?: bigint,
 };
 
-export interface Suite<E extends Group<E>> {
+export interface Suite<E extends CurvePoint<any, E>> {
 	id: string,
-	point: GroupConstructor<E>,
-	curve: BasicCurve<bigint>,
+	point: CurvePointCons<E>,
 	field: mod.IField<bigint>,
 	scalarSize: number,
 	elementSize: number,
@@ -76,14 +75,14 @@ export interface Keypair {
 	publicKey: Uint8Array,
 }
 
-interface OPRFPrivate<E extends Group<E>> {
+interface OPRFPrivate<E extends CurvePoint<any, E>> {
 	suite: Readonly<Suite<E>>,
 	contextString: Uint8Array,
 	hashToGroup(msg: Uint8Array, customDst?: Uint8Array): E,
 	hashToScalar(msg: Uint8Array, customDst?: Uint8Array): bigint,
 }
 
-interface OPRFCommon<E extends Group<E>> extends OPRFPrivate<E> {
+interface OPRFCommon<E extends CurvePoint<any, E>> extends OPRFPrivate<E> {
 	// Suite convenience accessors
 	randomScalar(): bigint,
 	encodeScalar(scalar: bigint): Uint8Array,
@@ -95,18 +94,18 @@ interface OPRFCommon<E extends Group<E>> extends OPRFPrivate<E> {
 	deriveKeypair(seed: Uint8Array, info?: Uint8Array): Keypair,
 }
 
-export interface OPRF<E extends Group<E>> extends OPRFCommon<E> {
+export interface OPRF<E extends CurvePoint<any, E>> extends OPRFCommon<E> {
 	blind(input: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: E }>,
 	blindEvaluate(secretKey: Uint8Array, blindedElement: E): E,
 	finalize(input: Uint8Array, blind: bigint, evaluatedElement: E): Uint8Array,
 	evaluate(secretKey: Uint8Array, input: Uint8Array): Uint8Array,
 }
 
-function encodeProof<T extends Group<T>>(oprf: OPRFPrivate<T>, proof: bigint[]): Uint8Array {
+function encodeProof<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, proof: bigint[]): Uint8Array {
 	return concatBytes(...proof.map((v) => oprf.suite.encodeScalar(v)));
 }
 
-function decodeProof<T extends Group<T>>(oprf: OPRFPrivate<T>, proof: Uint8Array): bigint[] {
+function decodeProof<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, proof: Uint8Array): bigint[] {
 	return splitBytesShared(proof, oprf.suite.scalarSize)
 		.map((v) => oprf.suite.decodeScalar(v));
 }
@@ -118,7 +117,7 @@ function decodeProof<T extends Group<T>>(oprf: OPRFPrivate<T>, proof: Uint8Array
  * @param D evaluatedElements
  * @returns
  */
-function computeComposites<T extends Group<T>>(oprf: OPRFPrivate<T>, B: T, C: T[], D: T[]): Readonly<{ M: T, Z: T }> {
+function computeComposites<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, B: T, C: T[], D: T[]): Readonly<{ M: T, Z: T }> {
 	const Bm = oprf.suite.encodeElement(B);
 	const seedDST = concatBytes(Labels.Seed, oprf.contextString);	// seedDST = "Seed-" || contextString
 	const seed = oprf.suite.hash(concatBytes(
@@ -153,7 +152,7 @@ function computeComposites<T extends Group<T>>(oprf: OPRFPrivate<T>, B: T, C: T[
  * @param D evaluatedElements
  * @returns
  */
-function computeCompositesFast<T extends Group<T>>(oprf: OPRFPrivate<T>, k: bigint, B: T, C: T[], D: T[]): Readonly<{ M: T, Z: T }> {
+function computeCompositesFast<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, k: bigint, B: T, C: T[], D: T[]): Readonly<{ M: T, Z: T }> {
 	const Bm = oprf.suite.encodeElement(B);
 	const seedDST = concatBytes(Labels.Seed, oprf.contextString);	// seedDST = "Seed-" || contextString
 	const seed = oprf.suite.hash(concatBytes(
@@ -191,7 +190,7 @@ function computeCompositesFast<T extends Group<T>>(oprf: OPRFPrivate<T>, k: bigi
  * @param evaluatedElements
  * @returns
  */
-function generateProof<T extends Group<T>>(oprf: OPRFPrivate<T>, k: bigint, A: T, B: T, C: T[], D: T[], options?: GenerateProofOptions): Uint8Array {
+function generateProof<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, k: bigint, A: T, B: T, C: T[], D: T[], options?: GenerateProofOptions): Uint8Array {
 	const { M, Z } = computeCompositesFast<T>(oprf, k, B, C, D);
 
 	const r = options?.proofRandomScalar ?? oprf.suite.randomScalar();
@@ -226,7 +225,7 @@ function generateProof<T extends Group<T>>(oprf: OPRFPrivate<T>, k: bigint, A: T
  * @param proof
  * @returns
  */
-function verifyProof<T extends Group<T>>(oprf: OPRFPrivate<T>, A: T, B: T, C: T[], D: T[], proof: Uint8Array): boolean {
+function verifyProof<T extends CurvePoint<any, T>>(oprf: OPRFPrivate<T>, A: T, B: T, C: T[], D: T[], proof: Uint8Array): boolean {
 	const { M, Z } = computeComposites<T>(oprf, B, C, D);
 	const [ c, s ] = decodeProof(oprf, proof);
 
@@ -261,7 +260,7 @@ function ainput(input: Uint8Array): void {
 		throw new InvalidInputError(`Invalid public input size ${input?.length || 0}, must be 0 - 65535 bytes`);
 }
 
-function createCommon<T extends Group<T>>(mode: number, suite: Suite<T>): Readonly<OPRFCommon<T>> {
+function createCommon<T extends CurvePoint<any, T>>(mode: number, suite: Suite<T>): Readonly<OPRFCommon<T>> {
 	const contextString: Uint8Array = concatBytes(
 		// "OPRFV1-" || I2OSP(mode, 1) || "-" || identifier
 		Labels.ContextV1Prefix, I2OSP(mode, 1),
@@ -340,13 +339,13 @@ function createCommon<T extends Group<T>>(mode: number, suite: Suite<T>): Readon
 }
 
 /** */
-export function createOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<OPRF<T>> {
+export function createOPRF<T extends CurvePoint<any, T>>(suite: Suite<T>): Readonly<OPRF<T>> {
 	return Object.freeze({
 		...createCommon(Mode.OPRF, suite),
 		blind(input: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: T }> {
 			ainput(input);
 			const inputElement = this.hashToGroup(input);
-			if (suite.curve.Fp.is0(inputElement))
+			if (suite.point.Fp.is0(inputElement))
 				throw new InvalidInputError();
 
 			const blind = options?.blindRandomScalar ?? suite.randomScalar();
@@ -376,7 +375,7 @@ export function createOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<OPRF<T
 		evaluate(secretKey: Uint8Array, input: Uint8Array): Uint8Array {
 			ainput(input);
 			const inputElement = this.hashToGroup(input);
-			if (suite.curve.Fp.is0(inputElement))
+			if (suite.point.Fp.is0(inputElement))
 				throw new InvalidInputError();
 
 			const skS = suite.decodeScalar(secretKey);
@@ -392,7 +391,7 @@ export function createOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<OPRF<T
 	});
 }
 
-export interface VOPRF<E extends Group<E>> extends OPRFCommon<E> {
+export interface VOPRF<E extends CurvePoint<any, E>> extends OPRFCommon<E> {
 	blind(input: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: E }>,
 	blindEvaluate(secretKey: Uint8Array, publicKey: Uint8Array, blindedElement: E, options?: GenerateProofOptions): Readonly<{ evaluatedElement: E, proof: Uint8Array }>,
 	blindEvaluateBatch(secretKey: Uint8Array, publicKey: Uint8Array, blindedElements: E[], options?: GenerateProofOptions): Readonly<{ evaluatedElements: E[], proof: Uint8Array }>,
@@ -402,13 +401,13 @@ export interface VOPRF<E extends Group<E>> extends OPRFCommon<E> {
 }
 
 /** */
-export function createVOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<VOPRF<T>> {
+export function createVOPRF<T extends CurvePoint<any, T>>(suite: Suite<T>): Readonly<VOPRF<T>> {
 	return Object.freeze({
 		...createCommon(Mode.VOPRF, suite),
 		blind(input: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: T }> {
 			ainput(input);
 			const inputElement = this.hashToGroup(input);
-			if (suite.curve.Fp.is0(inputElement))
+			if (suite.point.Fp.is0(inputElement))
 				throw new InvalidInputError();
 
 			const blind = options?.blindRandomScalar ?? suite.randomScalar();
@@ -489,7 +488,7 @@ export function createVOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<VOPRF
 		evaluate(secretKey: Uint8Array, input: Uint8Array): Uint8Array {
 			ainput(input);
 			const inputElement = this.hashToGroup(input);
-			if (suite.curve.Fp.is0(inputElement))
+			if (suite.point.Fp.is0(inputElement))
 				throw new InvalidInputError();
 
 			const skS = suite.decodeScalar(secretKey);
@@ -506,7 +505,7 @@ export function createVOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<VOPRF
 }
 
 
-export interface POPRF<E extends Group<E>> extends OPRFCommon<E> {
+export interface POPRF<E extends CurvePoint<any, E>> extends OPRFCommon<E> {
 	blind(input: Uint8Array, info: Uint8Array, publicKey: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: E, tweakedKey: E }>,
 	blindEvaluate(secretKey: Uint8Array, blindedElement: E, info: Uint8Array, options?: GenerateProofOptions): Readonly<{ evaluatedElement: E, proof: Uint8Array }>,
 	blindEvaluateBatch(secretKey: Uint8Array, blindedElements: E[], info: Uint8Array, options?: GenerateProofOptions): Readonly<{ evaluatedElements: E[], proof: Uint8Array }>,
@@ -516,7 +515,7 @@ export interface POPRF<E extends Group<E>> extends OPRFCommon<E> {
 }
 
 /** */
-export function createPOPRF<T extends Group<T>>(suite: Suite<T>): Readonly<POPRF<T>> {
+export function createPOPRF<T extends CurvePoint<any, T>>(suite: Suite<T>): Readonly<POPRF<T>> {
 	return Object.freeze({
 		...createCommon(Mode.POPRF, suite),
 		blind(input: Uint8Array, info: Uint8Array, publicKey: Uint8Array, options?: BlindOptions): Readonly<{ blind: bigint, blindedElement: T, tweakedKey: T }> {

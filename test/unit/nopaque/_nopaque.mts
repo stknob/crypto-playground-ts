@@ -1,7 +1,7 @@
 import { use, expect } from 'chai';
 import chaibytes from 'chai-bytes';
 
-import { Group } from '@noble/curves/abstract/curve.js';
+import { CurvePoint } from '@noble/curves/abstract/curve.js';
 import { utf8ToBytes } from "@noble/curves/utils.js";
 import { type ClientState } from "../../../src/nopaque/ristretto255.mjs";
 import { Client, ClientOpts, Server, ServerOpts } from '../../../src/nopaque/_nopaque.mjs';
@@ -9,7 +9,7 @@ import { Keypair } from '../../../src/oprf/_oprf.mjs';
 
 use(chaibytes);
 
-export async function runRoundtripTest<T extends Group<T>>(client: Client<T>, server: Server<T>) {
+export async function runRoundtripTest<T extends CurvePoint<any, T>>(client: Client<T>, server: Server<T>) {
     const password = server.randomSeed();
     const credentialId = utf8ToBytes("client123");
 
@@ -63,7 +63,7 @@ export type TestVector = {
 };
 
 
-export async function runTestVectors<T extends Group<T>>(vectors: TestVector[], clientFn: (opts: ClientOpts) => Client<T>, serverFn: (opts: ServerOpts) => Server<T>) {
+export async function runTestVectors<T extends CurvePoint<any, T>>(vectors: TestVector[], clientFn: (opts: ClientOpts) => Client<T>, serverFn: (opts: ServerOpts) => Server<T>) {
 	for (const vector of vectors) {
 		const client = clientFn({ stretch: async (msg) => msg, customDeriveDhKeyPairLabel: utf8ToBytes("OPAQUE-DeriveDiffieHellmanKeyPair"), });
 		const server = serverFn({ customDeriveKeyPairLabel: utf8ToBytes("OPAQUE-DeriveKeyPair"), });

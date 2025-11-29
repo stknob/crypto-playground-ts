@@ -10,15 +10,15 @@ export { Keypair, InvalidInputError, InverseError }; // Reexport important types
 
 // Weird type override to fix RistrettoPoint being a value of type RistPoint
 export type Decaf448Point = InstanceType<typeof decaf448.Point>;
+export type Ed448Curve = ReturnType<typeof ed448.Point.CURVE>;
 
 const shake256_512 = wrapConstructor<HashXOF<any>>(() => shake256.create({ dkLen: 64 }));
 
 const suite: Suite<Decaf448Point> = Object.freeze({
 	// Constants
 	id: "decaf448-SHAKE256",
-	curve: ed448.CURVE,
 	point: decaf448.Point,
-	field: mod.Field(ed448.CURVE.n, undefined, true),
+	field: mod.Field(ed448.Point.CURVE().n, undefined, true),
 	scalarSize: 56,
 	elementSize: 56,
 	hash: shake256_512,
@@ -32,7 +32,7 @@ const suite: Suite<Decaf448Point> = Object.freeze({
 	},
 	randomScalar(): bigint {
 		const uniform_random = randomBytes(this.scalarSize * 2);
-		return this.decodeScalar(mod.mapHashToField(uniform_random, this.curve.n, true));
+		return this.decodeScalar(mod.mapHashToField(uniform_random, ed448.Point.CURVE().n, true));
 	},
 	encodeScalar(scalar: bigint): Uint8Array {
 		return numberToBytesLE(scalar, this.scalarSize);
@@ -42,14 +42,14 @@ const suite: Suite<Decaf448Point> = Object.freeze({
 		if (!this.field.isValid(val)) throw new InvalidInputError();
 		return val;
 	},
-	hashToScalar(msg: Uint8Array, dst: Uint8Array): bigint {
-		return decaf448_hasher.hashToScalar(msg, { DST: dst });
+	hashToScalar(msg: Uint8Array, DST: Uint8Array): bigint {
+		return decaf448_hasher.hashToScalar(msg, { DST });
 	},
-	hashToGroup(msg: Uint8Array, dst: Uint8Array): Decaf448Point {
-		return decaf448_hasher.hashToCurve(msg, { DST: dst }) as Decaf448Point;
+	hashToGroup(msg: Uint8Array, DST: Uint8Array): Decaf448Point {
+		return decaf448_hasher.hashToCurve(msg, { DST }) as Decaf448Point;
 	},
 });
 
-export const OPRF = createOPRF(suite);
-export const VOPRF = createVOPRF(suite);
-export const POPRF = createPOPRF(suite);
+export const OPRF = (() => createOPRF(suite))();
+export const VOPRF = (() => createVOPRF(suite))();
+export const POPRF = (() => createPOPRF(suite))();
