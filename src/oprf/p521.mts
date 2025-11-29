@@ -23,7 +23,7 @@ const suite: Suite<P521Point> = Object.freeze({
 		return point.toBytes();
 	},
 	decodeElement(bytes: Uint8Array): P521Point {
-		return p521.Point.fromHex(bytes);
+		return p521.Point.fromBytes(bytes);
 	},
 	randomScalar(): bigint {
 		const tmp = p521.utils.randomSecretKey();
