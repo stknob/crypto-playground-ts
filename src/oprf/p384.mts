@@ -1,5 +1,4 @@
 import { p384, p384_hasher } from "@noble/curves/nist.js";
-import * as mod from "@noble/curves/abstract/modular.js";
 import { numberToBytesBE } from "@noble/curves/utils.js";
 import { sha384 } from '@noble/hashes/sha2.js';
 
@@ -13,7 +12,7 @@ export type P384Curve = ReturnType<typeof p384.Point.CURVE>;
 const suite: Suite<P384Point> = Object.freeze({
 	id: "P384-SHA384",
 	point: p384.Point,
-	field: mod.Field(p384.Point.CURVE().n, undefined, false),
+	field: p384.Point.Fn,
 	elementSize: 49,
 	scalarSize: 48,
 	hash: sha384,

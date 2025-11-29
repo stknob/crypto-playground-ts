@@ -2,7 +2,7 @@ import { use, expect } from 'chai';
 import chaibytes from 'chai-bytes';
 
 import { CurvePoint } from '@noble/curves/abstract/curve.js';
-import { utf8ToBytes } from "@noble/curves/utils.js";
+import { utf8ToBytes } from "@noble/hashes/utils.js";
 import { type ClientState } from "../../../src/nopaque/ristretto255.mjs";
 import { Client, ClientOpts, Server, ServerOpts } from '../../../src/nopaque/_nopaque.mjs';
 import { Keypair } from '../../../src/oprf/_oprf.mjs';

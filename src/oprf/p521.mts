@@ -13,7 +13,7 @@ export type P521Curve = ReturnType<typeof p521.Point.CURVE>;
 const suite: Suite<P521Point> = Object.freeze({
 	id: "P521-SHA512",
 	point: p521.Point,
-	field: mod.Field(p521.Point.CURVE().n, undefined, false),
+	field: p521.Point.Fn,
 	elementSize: 67,
 	scalarSize: 66,
 	hash: sha512,

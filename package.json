@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "@noble/curves": "1.9.7"
+    "@noble/curves": "2.0.1",
+    "@noble/hashes": "2.0.1"
   },
   "devDependencies": {
     "@rspack/cli": "1.6.5",

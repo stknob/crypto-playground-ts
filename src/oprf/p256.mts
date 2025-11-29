@@ -1,5 +1,4 @@
 import { p256, p256_hasher } from "@noble/curves/nist.js";
-import * as mod from "@noble/curves/abstract/modular.js";
 import { numberToBytesBE } from "@noble/curves/utils.js";
 import { sha256 } from '@noble/hashes/sha2.js';
 
@@ -13,7 +12,7 @@ export type P256Curve = ReturnType<typeof p256.Point.CURVE>;
 const suite: Suite<P256Point> = Object.freeze({
 	id: "P256-SHA256",
 	point: p256.Point,
-	field: mod.Field(p256.Point.CURVE().n, undefined, false),
+	field: p256.Point.Fn,
 	elementSize: 33,
 	scalarSize: 32,
 	hash: sha256,

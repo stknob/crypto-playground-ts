@@ -16,7 +16,7 @@ const suite: Suite<Ristretto255Point> = Object.freeze({
 	// Constants
 	id: "ristretto255-SHA512",
 	point: ristretto255.Point,
-	field: mod.Field(ed25519.Point.CURVE().n, undefined, true),
+	field: ed25519.Point.Fn,
 	scalarSize: 32,
 	elementSize: 32,
 	hash: sha512,
